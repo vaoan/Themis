@@ -99,6 +99,11 @@ export async function planInit({
 
   const { data: repoData } = await github.request("GET", `/repos/${repo}`);
   const exists = Boolean(repoData);
+  // GitHub answers /generate on a plain repository with a 404, so this is checked here, where
+  // --dry-run sees it, and not discovered after a write. A body that exists no longer needs it.
+  if (!exists && templateData.is_template !== true) {
+    throw new Error(`${template} is not a template repository: mark it as one in its GitHub settings, then rerun init`);
+  }
   // Generation is asynchronous: the repository can exist before its default branch does.
   let branchReady = false;
   if (exists) {
@@ -171,7 +176,10 @@ async function generateRepo(plan, { github, sleep }) {
   const { template, owner, repo, defaultBranch } = plan.params;
   const name = repo.split("/")[1];
   if (!plan.steps[0].exists) {
-    await github.request("POST", `/repos/${template}/generate`, { owner, name, private: false, include_all_branches: false });
+    // The client returns 404 as data rather than throwing, so anything but 201 is checked here:
+    // otherwise a refusal looks like a slow generation and the poll below blames the branch.
+    const { status } = await github.request("POST", `/repos/${template}/generate`, { owner, name, private: false, include_all_branches: false });
+    if (status !== 201) throw new Error(`could not generate ${repo} from ${template} (GitHub ${status}); check that the token can create repositories for ${owner}`);
   }
   for (let attempt = 0; attempt < BRANCH_POLL_TRIES; attempt++) {
     const { data } = await github.request("GET", `/repos/${repo}/branches/${defaultBranch}`);
