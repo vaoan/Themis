@@ -7,7 +7,7 @@ import { applyRepoPolicy as realApplyRepoPolicy } from "../lib/repo-policy.mjs";
 import { planInit, runInit, listClasses, defaultRepoName, NAME_PATTERN } from "../lib/init.mjs";
 
 const USAGE =
-  "usage: themis init <name> --class <class> [--owner vaoan] [--repo-name <Name>] [--template vaoan/Vulkan] [--role planet] [--dry-run]";
+  "usage: themis init <name> --class <class> [--owner vaoan] [--repo-name <Name>] [--template <owner/repo>] [--role planet] [--dry-run]";
 
 function defaultRun(command, args, options = {}) {
   return execFileSync(command, args, {
@@ -37,7 +37,7 @@ export default async function init(argv, deps = {}) {
         class: { type: "string" },
         owner: { type: "string", default: "vaoan" },
         "repo-name": { type: "string" },
-        template: { type: "string", default: "vaoan/Vulkan" },
+        template: { type: "string" },
         role: { type: "string", default: "planet" },
         "dry-run": { type: "boolean", default: false },
       },
@@ -77,18 +77,30 @@ export default async function init(argv, deps = {}) {
     return 2;
   }
 
+  // The template is the registry's starter unless --template names another: init then follows a
+  // renamed or replaced starter without a code change.
+  let template = values.template;
+  if (!template) {
+    const starters = Object.values(registry.bodies ?? {}).filter((body) => body.role === "starter");
+    if (starters.length !== 1) {
+      console.error(`registry.json must have exactly one body with role starter (found ${starters.length}), or pass --template`);
+      return 2;
+    }
+    template = starters[0].repo;
+  }
+
   const repoName = values["repo-name"] ?? defaultRepoName(name);
   try {
     const token = resolveToken();
     const github = createGithub({ token });
     const policy = loadPolicy();
     const plan = await planInit({
-      name, owner: values.owner, template: values.template, klass: values.class, role: values.role, repoName,
+      name, owner: values.owner, template, klass: values.class, role: values.role, repoName,
       github, policy, applyRepoPolicy,
     });
 
     if (values["dry-run"]) {
-      console.log(`dry run: would create ${plan.params.repo} from ${values.template}`);
+      console.log(`dry run: would create ${plan.params.repo} from ${template}`);
       for (const step of plan.steps) console.log(`  ${step.kind.padEnd(15)} ${step.done ? "done   " : "pending"}  ${step.detail}`);
       return 0;
     }

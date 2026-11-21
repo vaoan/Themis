@@ -5,7 +5,7 @@ Usage:
   themis repo apply <owner/name> [--dry-run] [--policy <file>]
   themis ci <verb> [--head] [--base] [--title] [--repo] [--head-sha] [--files]
   themis hook <commit-msg|pre-push> [args]
-  themis init <name> --class <class> [--owner vaoan] [--repo-name <Name>] [--template vaoan/Vulkan] [--role planet] [--dry-run]
+  themis init <name> --class <class> [--owner vaoan] [--repo-name <Name>] [--template <owner/repo>] [--role planet] [--dry-run]
   themis release [--dry-run] [--version-file <package.json>]
   themis reconcile <repoA> <repoB> [--sample surface=path]... [--out <dir>]
   themis bundle [--rulings docs/decisions/rulings.json] [--package packages/themis]

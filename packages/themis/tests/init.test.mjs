@@ -356,7 +356,7 @@ describe("themis init command", () => {
       const git = extra.git ?? makeGit();
       const code = await init(argv, {
         createGithub: () => world.github, resolveToken: () => "tok", run: git.run, sleep: async () => {},
-        loadPolicy: () => policy, applyRepoPolicy: noOps, loadRegistry: () => ({ bodies: { janus: {} } }), ...extra.deps,
+        loadPolicy: () => policy, applyRepoPolicy: noOps, loadRegistry: () => ({ bodies: { janus: {}, vulkan: { repo: "vaoan/Vulkan", role: "starter" } } }), ...extra.deps,
       });
       return { code, out, err, world, git };
     } finally {
@@ -386,6 +386,35 @@ describe("themis init command", () => {
     expect(code).toBe(0);
     expect(out.at(-1)).toContain("vaoan/Portia");
     expect(out.at(-1)).toContain("https://example/pr/9");
+  });
+
+  it("generates from the registry's starter when --template is not given", async () => {
+    const world = makeWorld();
+    const inner = world.github.request;
+    world.github.request = async (method, route, body) => {
+      if (route === "/repos/vaoan/Forge") return { status: 200, data: { default_branch: "develop", is_template: true } };
+      return inner(method, route, body);
+    };
+    const registry = { bodies: { forge: { repo: "vaoan/Forge", role: "starter", class: "next-supabase-mono" } } };
+    const { code, out } = await run(["portia", "--class", "next-supabase-mono", "--dry-run"], { world, deps: { loadRegistry: () => registry } });
+    expect(code).toBe(0);
+    expect(out[0]).toBe("dry run: would create vaoan/Portia from vaoan/Forge");
+  });
+
+  it("lets --template override the registry's starter", async () => {
+    const registry = { bodies: { forge: { repo: "vaoan/Forge", role: "starter", class: "next-supabase-mono" } } };
+    const { code, out } = await run(["portia", "--class", "next-supabase-mono", "--template", "vaoan/Vulkan", "--dry-run"], { deps: { loadRegistry: () => registry } });
+    expect(code).toBe(0);
+    expect(out[0]).toBe("dry run: would create vaoan/Portia from vaoan/Vulkan");
+  });
+
+  it("exits 2 without --template when the registry does not name exactly one starter", async () => {
+    for (const bodies of [{}, { a: { repo: "vaoan/A", role: "starter" }, b: { repo: "vaoan/B", role: "starter" } }]) {
+      const { code, err, world } = await run(["portia", "--class", "next-supabase-mono", "--dry-run"], { deps: { loadRegistry: () => ({ bodies }) } });
+      expect(code).toBe(2);
+      expect(err.join("\n")).toMatch(/exactly one body with role starter/);
+      expect(world.calls).toEqual([]);
+    }
   });
 
   it("honours --repo-name", async () => {

@@ -36,9 +36,7 @@ in its own repository rather than inside `aeleos`.
 | eclipse-con | `vaoan/eclipse-con` | planet | `next-supabase-mono` |
 | janus | `vaoan/Janus` | planet | `next-supabase-mono` |
 | portia | `vaoan/Portia` | planet, the first body born from `themis init` (ADR 0021) | `next-supabase-mono` |
-
-`vaoan/Vulkan` is the starter: the GitHub template `themis init` generates every new
-body from. It is not in `registry.json` yet, although ADR 0021 asks for it.
+| vulkan | `vaoan/Vulkan` | starter — the GitHub template `themis init` generates every new body from | `next-supabase-mono` |
 
 `aeleos` is the centre of the *runtime* constellation — it owns the authoritative
 `actors` table and derives one identity per human. Themis is the centre of the
