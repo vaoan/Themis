@@ -33,7 +33,7 @@ const REGISTRY = `{
 `;
 
 // An in-memory GitHub: the template, optionally the generated repo, Themis's registry.
-function makeWorld({ registryBranchExists = false, noRegistryOnBranch = false, exists = false, files = {}, pollsBeforeBranch = 0, openPr = false, registry = REGISTRY, hasMain = true } = {}) {
+function makeWorld({ registryBranchExists = false, noRegistryOnBranch = false, exists = false, files = {}, pollsBeforeBranch = 0, openPr = false, registry = REGISTRY, hasMain = true, isTemplate = true, generateStatus = 201 } = {}) {
   const calls = [];
   const state = { exists, polls: 0, branches: new Set(), registry, files: { ...files } };
   const github = {
@@ -42,8 +42,12 @@ function makeWorld({ registryBranchExists = false, noRegistryOnBranch = false, e
       const [pathname] = route.split("?");
       const ok = (data, status = 200) => ({ status, data });
       const none = { status: 404, data: null };
-      if (method === "GET" && pathname === "/repos/vaoan/Vulkan") return ok({ default_branch: "develop" });
-      if (method === "POST" && pathname === "/repos/vaoan/Vulkan/generate") { state.exists = true; return ok({}, 201); }
+      if (method === "GET" && pathname === "/repos/vaoan/Vulkan") return ok({ default_branch: "develop", is_template: isTemplate });
+      if (method === "POST" && pathname === "/repos/vaoan/Vulkan/generate") {
+        if (generateStatus === 404) return none;
+        state.exists = true;
+        return ok({}, generateStatus);
+      }
       if (method === "GET" && pathname === "/repos/vaoan/Portia") return state.exists ? ok({ default_branch: "develop" }) : none;
       if (method === "GET" && pathname === "/repos/vaoan/Portia/branches/main") return hasMain ? ok({ commit: { sha: "m1" } }) : none;
       if (method === "GET" && pathname === "/repos/vaoan/Portia/branches/develop") {
@@ -142,6 +146,18 @@ describe("planInit", () => {
     expect(plan.steps.at(-1).done).toBe(true);
   });
 
+  it("refuses a source repository that is not a GitHub template, before anything is written", async () => {
+    const { github, calls } = makeWorld({ isTemplate: false });
+    await expect(planInit({ ...base, github, policy, applyRepoPolicy: noOps })).rejects.toThrow(/vaoan\/Vulkan is not a template repository/);
+    expect(calls.filter((c) => c.method !== "GET")).toEqual([]);
+  });
+
+  it("does not ask for a template once the repository already exists", async () => {
+    const { github } = makeWorld({ isTemplate: false, exists: true });
+    const plan = await planInit({ ...base, github, policy, applyRepoPolicy: noOps });
+    expect(plan.steps[0].exists).toBe(true);
+  });
+
   it("makes no write calls while planning", async () => {
     const { github, calls } = makeWorld();
     await planInit({ ...base, github, policy, applyRepoPolicy: noOps });
@@ -223,6 +239,13 @@ describe("runInit", () => {
     expect(clone.options.env.GH_TOKEN).toBe("secret-token");
     expect(clone.args.join(" ")).toContain("credential.helper=!");
     expect(clone.args).toContain("https://github.com/vaoan/Portia.git");
+  });
+
+  it("fails at generation, without polling, when GitHub does not create the repository", async () => {
+    const world = makeWorld({ generateStatus: 404 });
+    const plan = await planInit({ ...base, github: world.github, policy, applyRepoPolicy: noOps });
+    await expect(runInit(plan, deps(world, makeGit()))).rejects.toThrow(/could not generate vaoan\/Portia from vaoan\/Vulkan \(GitHub 404\)/);
+    expect(world.state.polls).toBe(0);
   });
 
   it("gives up with a clear error when the branch never appears", async () => {
