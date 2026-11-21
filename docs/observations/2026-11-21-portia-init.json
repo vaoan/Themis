@@ -1,0 +1,83 @@
+{
+  "date": "2026-11-21",
+  "plan": "docs/plans/2026-11-11-starter-and-init.md",
+  "task": 12,
+  "outcome": "failed",
+  "outcomeReason": "the trial ran before Tasks 7-10, so the starter, and therefore Portia, lacked Supabase, AeleOS login, owned resources, the audit log and the AI-layer files",
+  "portiaDeleted": true,
+  "node": "v24.21.0",
+  "pnpm": "12.18.0",
+  "starter": {
+    "repo": "vaoan/Vulkan",
+    "developAt": "d24c07c",
+    "tasksMerged": [5, 6],
+    "tasksMissing": [7, 8, 9, 10],
+    "isTemplateBeforeTrial": false
+  },
+  "runs": [
+    {
+      "attempt": 1,
+      "command": "themis init portia --class next-supabase-mono",
+      "dryRun": { "ok": true, "steps": 5, "allPending": true, "reportedTheProblem": false },
+      "exit": 1,
+      "message": "vaoan/Portia was generated but branch develop did not appear after 30 tries; rerun init to continue",
+      "actualCause": "Vulkan was not a template repository; POST /generate answered 404 and the client returned it as data",
+      "repoCreated": false,
+      "fixedIn": "vaoan/Themis#66"
+    },
+    {
+      "attempt": 2,
+      "after": ["vaoan/Themis#66 merged", "Vulkan is_template set to true by hand (Task 11 step 5, out of order)"],
+      "command": "themis init portia --class next-supabase-mono",
+      "exit": 0,
+      "stepsDoneOnRerunDryRun": 5,
+      "portiaCommits": ["5d0b65b Initial commit", "6492ade chore(init): rename and pointers [GH-000]"],
+      "vulkanMentionsLeft": 0,
+      "registryPr": "vaoan/Themis#67"
+    }
+  ],
+  "registryPr": {
+    "pr": "vaoan/Themis#67",
+    "firstCi": "failure",
+    "cause": "packages/themis/tests/registry.test.mjs pinned the exact list of bodies",
+    "fixedIn": "vaoan/Themis#68",
+    "merged": true
+  },
+  "portiaCiOnPush": { "develop": ["success", "success"], "main": ["success"] },
+  "step3": {
+    "editsMade": false,
+    "results": [
+      { "command": "pnpm install --frozen-lockfile", "exit": 0, "packages": 742, "pnpmSeconds": 8.9 },
+      { "command": "pnpm lint", "exit": 0, "wallSeconds": 8, "warnings": ["boundaries/no-unknown is deprecated; use boundaries/no-unknown-dependencies"] },
+      { "command": "pnpm typecheck", "exit": 0, "wallSeconds": 1 },
+      { "command": "pnpm test", "exit": 0, "testFiles": 2, "tests": 5, "wallSeconds": 4 },
+      { "command": "pnpm build", "exit": 0, "wallSeconds": 10 }
+    ]
+  },
+  "step4": {
+    "pr": "vaoan/Portia#1",
+    "requiredChecks": ["ci / branch-name", "ci / branch-sync", "ci / branch-target", "ci / config-drift", "ci / pr-title", "ci / test"],
+    "allPassed": true,
+    "mergeState": "CLEAN",
+    "note": "deleted with the repository"
+  },
+  "step5": { "run": false, "reason": "moot once the content gap was found" },
+  "contentAgainstSpec": [
+    { "item": "Next.js, pnpm workspace, class next-supabase-mono", "present": true },
+    { "item": "bilingual es and en", "present": true },
+    { "item": "lint, typecheck, tests and CI from the Themis bundle", "present": true },
+    { "item": "Supabase, current_user_id() and the actors mirror", "present": false, "task": 7 },
+    { "item": "owned resources with delegated capabilities, and the audit log", "present": false, "task": 8 },
+    { "item": "login through AeleOS", "present": false, "task": 9 },
+    { "item": "root CLAUDE.md and path-scoped .claude/rules/", "present": false, "task": 10, "note": "a 39-line CLAUDE.md only" }
+  ],
+  "handRepairs": [
+    "Vulkan is_template set by hand before the second run",
+    "registry test rewritten (vaoan/Themis#68) so the registry PR could pass"
+  ],
+  "otherFindings": [
+    "the starter commits apps/web/tsconfig.tsbuildinfo at the root as tsconfig.tsbuildinfo",
+    "the starter's README has no description of the body under its title"
+  ],
+  "keptFromTheTrial": ["vaoan/Themis#66", "vaoan/Themis#68", "vaoan/Themis#70"]
+}
