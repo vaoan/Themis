@@ -7,7 +7,6 @@
     "puck":        { "repo": "vaoan/Puck",        "role": "planet", "class": "next-supabase-mono" },
     "eclipse-con": { "repo": "vaoan/eclipse-con", "role": "planet", "class": "next-supabase-mono" },
     "janus":       { "repo": "vaoan/Janus",       "role": "planet", "class": "next-supabase-mono" },
-    "portia":      { "repo": "vaoan/Portia",      "role": "planet", "class": "next-supabase-mono" },
     "vulkan":      { "repo": "vaoan/Vulkan",      "role": "starter", "class": "next-supabase-mono" }
   }
 }
